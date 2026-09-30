@@ -1,5 +1,34 @@
-Technical Concept: 16-Bit Packed ContainersStandard ASCII characters occupy 1 byte (8 bits) of memory. Modern Unicode characters (such as UTF-8 or UTF-16 encodings) can span 2 bytes (16 bits) or more.The challenge's encryption process generated each encoded character $C$ by taking two consecutive 8-bit ASCII characters ($\text{char}_1$ and $\text{char}_2$) and packing them into a single 16-bit integer $z$:$$z = (\text{ord}(\text{char}_1) \ll 8) + \text{ord}(\text{char}_2)$$Binary Structure:Original High Byte (char_1):  [0 1 1 1 0 0 0 0]  ('p')
-Original Low Byte  (char_2):  [0 1 1 0 1 0 0 1]  ('i')
+# Transformation — CTF Writeup
 
-Packed 16-bit Integer z:       [0 1 1 1 0 0 0 0 0 1 1 0 1 0 0 1]  (Unicode character)
-Decryption Strategy & Bitwise OperationsTo recover the flag, each 16-bit character from enc is unpacked back into two distinct 8-bit ASCII characters.Because bitwise shifting is a destructive operation that discards bits, two independent operations must be performed on the untouched original integer $z$:1. Extracting the High Byte (First Character)Operation: z >> 8Mechanism: Bitwise right-shift slides all 16 bits 8 positions to the right. This moves the upper byte into positions 0–7 and discards the bottom 8 bits.Conversion: chr(z >> 8)2. Extracting the Low Byte (Second Character)Operation: z & 0x00FFMechanism: Bitwise AND with mask 0x00FF (0b0000000011111111). This zeros out the upper 8 bits completely while keeping the bottom 8 bits intact.Conversion: chr(z & 0x00FF)Key Learnings & TakeawaysMemory & Byte Alignment: Understanding how 8-bit bytes are laid out side-by-side inside larger 16-bit registers or integers.Register State vs. Variable Observation: Realizing that modifying a variable using bitwise shifts alters or destroys bit sequences, requiring separate operations on the original stored value $z$.Data Type Management in Python: Handling integer values extracted via ord() vs. string output via chr(), avoiding mixed-type concatenation errors.
+## Overview
+This writeup documents the solution for the Transformation challenge. The challenge provided an encrypted source file (`enc`) containing Unicode characters. Each character in the file was a 16-bit container packing two distinct 8-bit ASCII characters together.
+
+## Technical Breakdown
+
+### The Packing Mechanism
+The encryption formula compressed two 8-bit characters (char1 and char2) into a single 16-bit integer Z:
+
+Z = (char1 << 8) + char2
+
+- High Byte (First Character): Shifted 8 bits to the left, occupying the top 8 bits.
+- Low Byte (Second Character): Placed directly into the bottom 8 bits.
+
+## What Was Learned & Implemented
+
+1. Bitwise Right-Shift (`>> 8`):
+   Extracted the high byte (first character) by sliding the upper 8 bits down into the lower position while discarding the bottom 8 bits.
+
+2. Bitwise AND Masking (`& 0x00FF`):
+   Isolated the low byte (second character) by zeroing out the upper 8 bits while preserving the bottom 8 bits untouched.
+
+3. Register Mutation vs. Static Inspection:
+   Realized that bitwise operations alter the value being evaluated rather than merely looking at it. Both operations must be performed independently on the original untouched character integer value.
+
+4. Type Safety in Scripting:
+   Fixed handling of integer-to-character conversions using `chr()`, ensuring type consistency when concatenating high-byte and low-byte string outputs.
+
+## How to Run
+Ensure your Python script and the `enc` file are in the same directory:
+
+```bash
+python3 bitwise.py
